@@ -27,7 +27,7 @@ This project implements a wireless remote control system using ESP8266 microcont
 - 2 x ESP8266 boards (e.g., NodeMCU)
 - 4 x Push buttons
 - 2 x DC motors (for the receiver/car)
-- L298N Motor Driver (or similar)
+- Motor Driver
 - Power supply for the motors
 - Jumper wires
 
@@ -51,7 +51,8 @@ This project implements a wireless remote control system using ESP8266 microcont
 Before uploading the code:
 
 1. In `transmitter.ino`, replace the `receiverMAC` array with the MAC address of your receiver ESP8266.
-2. Adjust the `SERIAL_PORT` boolean in both files if you want to enable/disable serial debugging.
+2. In `receiver.ino`, adjust the `MOTOR_DRIVER` variable to match your motor driver type.
+3. Adjust the `SERIAL_PORT` boolean in both files if you want to enable/disable serial debugging.
 
 ## Usage
 
@@ -68,12 +69,3 @@ Before uploading the code:
 - Ensure both devices are powered and within range of each other.
 - Check that the MAC address in the transmitter code matches the receiver's MAC address.
 - Verify all connections if the motors are not responding as expected.
-
-## Contributing
-
-Contributions to improve the project are welcome. Please feel free to fork the repository and submit pull requests.
-
-## Credits
-
-Created by NIHAL T P
-GitHub: [nihaltp](https://github.com/nihaltp)
