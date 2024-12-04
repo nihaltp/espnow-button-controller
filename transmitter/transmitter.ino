@@ -8,6 +8,7 @@
 #include <espnow.h>
 
 // Mac Address of the Receiver
+// Serial.println(WiFi.getMacAddress());
 uint8_t receiverMAC[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00}; // TODO: Replace Mac Address
 
 // Define Pins For Control Buttons
@@ -16,7 +17,7 @@ const int BTN2 = D2; // Backward Button
 const int BTN3 = D3; // Left Button
 const int BTN4 = D4; // Right Button
 
-const bool SERIAL_PORT = true; // TODO: Change
+#define SERIAL_PORT true  // TODO: Change
 
 typedef struct packetData {
   uint8_t btnValue1;
@@ -28,10 +29,10 @@ typedef struct packetData {
 packetData controls;
 
 void onDataSent(uint8_t *mac_addr, uint8_t sendStatus) {
-  if (SERIAL_PORT) {
+  #if SERIAL_PORT
     Serial.print("Send Status:\t");
     Serial.println(sendStatus == 0 ? "Success" : "Fail");
-  }
+  #endif
 }
 
 void setup() {
@@ -59,13 +60,13 @@ void loop() {
   controls.btnValue3 = digitalRead(BTN3);
   controls.btnValue4 = digitalRead(BTN4);
 
-  if (SERIAL_PORT) {
+  #if SERIAL_PORT
     Serial.print("Button Values:\t");
     Serial.print(controls.btnValue1);   Serial.print("\t");
     Serial.print(controls.btnValue2);   Serial.print("\t");
     Serial.print(controls.btnValue3);   Serial.print("\t");
     Serial.println(controls.btnValue4);
-  }
+  #endif
 
   // Send the control message
   esp_now_send(receiverMAC, (uint8_t *) &controls, sizeof(controls));
