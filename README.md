@@ -10,10 +10,8 @@ This project implements a wireless remote control system using ESP8266 microcont
 - [Setup](#setup)
 - [Configuration](#configuration)
 - [Usage](#usage)
-- [Circuit Diagrams](#circuit-diagrams)
+- [Circuit Diagrams](#circuit-diagram)
 - [Troubleshooting](#troubleshooting)
-- [Contributing](#contributing)
-- [Credits](#credits)
 
 ## Features
 
@@ -43,8 +41,9 @@ This project implements a wireless remote control system using ESP8266 microcont
 1. Install the required libraries in your Arduino IDE.
 2. Upload the `transmitter.ino` code to one ESP8266 board (the controller).
 3. Upload the `receiver.ino` code to another ESP8266 board (the robot).
-4. Connect the buttons to the transmitter board according to the pin definitions in the code.
-5. Connect the motors and motor driver to the receiver board as per the pin definitions.
+4. Connect the GND to button inputs
+5. Connect the buttons to the transmitter board according to the pin definitions in the code.
+6. Connect the motors and motor driver to the receiver board as per the pin definitions.
 
 ## Configuration
 
@@ -63,9 +62,12 @@ Before uploading the code:
 ## Circuit Diagram
 
 ![Example Transmitter Circuit](circuit/transmitter.png)
+![Example L298N Receiver Circuit](circuit/L298N.png)
+![Example BTS Receiver Circuit](circuit/BTS.png)
 
 ## Troubleshooting
 
 - Ensure both devices are powered and within range of each other.
 - Check that the MAC address in the transmitter code matches the receiver's MAC address.
 - Verify all connections if the motors are not responding as expected.
+- Make sure GND is provided to Buttons
