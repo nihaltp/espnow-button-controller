@@ -4,29 +4,82 @@
   GitHub: nihaltp
 */
 
-#include <ESP8266WiFi.h>
-#include <espnow.h>
+// Define ESP Boards
+#define ESP8266 0
+#define ESP32 1
 
 // Define Motor Drivers
 #define DRIVER_L298N 0
 #define DRIVER_BTS 1
-#define MOTOR_DRIVER DRIVER_L298N // Set to DRIVER_BTS or DRIVER_L298N // TODO: Change
 
-const int L1  = D0; // Left  1
-const int L2  = D1; // Left  2
-const int R1  = D3; // Right 1
-const int R2  = D4; // Right 2
+#define BOARD ESP8266              // TODO: Change to: ESP32
+#define MOTOR_DRIVER DRIVER_L298N  // TODO: Change to: DRIVER_BTS
+#define SERIAL_PORT true           // TODO: Change to: false
 
-#if MOTOR_DRIVER == DRIVER_BTS
-constexpr int ENL = D2; // Left Enable (for BTS)
-constexpr int ENR = D5; // Right Enable (for BTS)
+#if BOARD == ESP32
+  #include <WiFi.h>        // ESP32 Library
+  #include <esp_now.h>     // ESPNOW Library for ESP32
+#elif BOARD == ESP8266
+  #include <ESP8266WiFi.h> // ESP8266 Library
+  #include <espnow.h>      // ESPNOW Library for ESP8266
+#else
+  #error "Unsupported BOARD value."
+#endif
+
+#warning "Verify pin assignments for motors before running the code."
+#if BOARD == ESP32
+  #if MOTOR_DRIVER == DRIVER_L298N
+    const int L1  = 4;  // Left  1 // TODO: Change Pin
+    const int L2  = 5;  // Left  2 // TODO: Change Pin
+    const int R1  = 18; // Right 1 // TODO: Change Pin
+    const int R2  = 19; // Right 2 // TODO: Change Pin
+  #elif MOTOR_DRIVER == DRIVER_BTS
+    // These pins should be able to handle 0-255 PWM
+    const int L1  = 18; // Left  1 // TODO: Change Pin
+    const int L2  = 19; // Left  2 // TODO: Change Pin
+    const int R1  = 20; // Right 1 // TODO: Change Pin
+    const int R2  = 21; // Right 2 // TODO: Change Pin
+  #endif
+#elif BOARD == ESP8266
+  // These pins should be able to handle 0-255 PWM
+  const int L1  = D0; // Left  1 // TODO: Change Pin
+  const int L2  = D1; // Left  2 // TODO: Change Pin
+  const int R1  = D3; // Right 1 // TODO: Change Pin
+  const int R2  = D4; // Right 2 // TODO: Change Pin
+#endif
+
+#if MOTOR_DRIVER == DRIVER_L298N
+  #if BOARD == ESP32
+    // These pins should be able to handle 0-255 PWM
+    const int ENL = 22; // Left Enable  // TODO: Change Pin
+    const int ENR = 23; // Right Enable // TODO: Change Pin
+  #elif BOARD == ESP8266
+    const int ENL = D2; // Left Enable  // TODO: Change Pin
+    const int ENR = D5; // Right Enable // TODO: Change Pin
+  #endif
+#endif
+
+#if BOARD == ESP32
+  const int pwmFrequency = 5000;
+  const int pwmResolution = 8;
+  
+  const int pwmChannelL1 = 0;
+  const int pwmChannelL2 = 1;
+  const int pwmChannelR1 = 2;
+  const int pwmChannelR2 = 3;
+  
+  #if MOTOR_DRIVER == DRIVER_L298N
+    const int pwmChannelENL = 4;
+    const int pwmChannelENR = 5;
+  #endif
 #endif
 
 const int MAX_SPEED = 255;
 const int HALF_SPEED = 127;
 const int MIN_SPEED = 0;
 
-#define SERIAL_PORT true  // TODO: Change
+#define debugPrint(x)  if (SERIAL_PORT) Serial.print(x)
+#define debugPrintln(x) if (SERIAL_PORT) Serial.println(x)
 
 typedef struct packetData {
   uint8_t btnValue1;
@@ -37,22 +90,11 @@ typedef struct packetData {
 
 packetData controls;
 
-void onReceive(uint8_t *mac_addr, uint8_t *incomingData, uint8_t len) {
-  memcpy(&controls, incomingData, sizeof(controls));
-  #if SERIAL_PORT
-    Serial.println("Received commands:");
-    Serial.print(controls.btnValue1);   Serial.print("\t");
-    Serial.print(controls.btnValue2);   Serial.print("\t");
-    Serial.print(controls.btnValue3);   Serial.print("\t");
-    Serial.println(controls.btnValue4);
-  #endif
-  simpleMovements();
-}
-
+// MARK: setup
 void setup() {
   Serial.begin(115200);
   WiFi.mode(WIFI_STA);
-
+  
   // Initialize ESP-NOW
   int retryCount = 5;
   while (esp_now_init() != 0 && retryCount-- > 0) {
@@ -68,19 +110,52 @@ void setup() {
   
   esp_now_set_self_role(ESP_NOW_ROLE_SLAVE);
   esp_now_register_recv_cb(onReceive);
-
+  
   pinMode(L1,  OUTPUT);
   pinMode(L2,  OUTPUT);
   pinMode(R1,  OUTPUT);
   pinMode(R2,  OUTPUT);
   
-  #if MOTOR_DRIVER == DRIVER_BTS
+  #if MOTOR_DRIVER == DRIVER_L298N
     pinMode(ENL, OUTPUT);
     pinMode(ENR, OUTPUT);
+  #endif
+  
+  #if BOARD == ESP32
+    ledcSetup(pwmChannelL1, pwmFrequency, pwmResolution);
+    ledcSetup(pwmChannelL2, pwmFrequency, pwmResolution);
+    ledcSetup(pwmChannelR1, pwmFrequency, pwmResolution);
+    ledcSetup(pwmChannelR2, pwmFrequency, pwmResolution);
+    
+    ledcAttachPin(L1, pwmChannelL1);
+    ledcAttachPin(L2, pwmChannelL2);
+    ledcAttachPin(R1, pwmChannelR1);
+    ledcAttachPin(R2, pwmChannelR2);
+    
+    #if MOTOR_DRIVER == DRIVER_L298N
+      ledcSetup(pwmChannelENL, pwmFrequency, pwmResolution);
+      ledcSetup(pwmChannelENR, pwmFrequency, pwmResolution);
+      
+      ledcAttachPin(ENL, pwmChannelENL);
+      ledcAttachPin(ENR, pwmChannelENR);
+    #endif
   #endif
 }
 
 void loop() {}
+
+// MARK: onRecieve
+void onReceive(uint8_t *mac_addr, uint8_t *incomingData, uint8_t len) {
+  memcpy(&controls, incomingData, sizeof(controls));
+  
+  debugPrint("Received commands:\t");
+  debugPrint(controls.btnValue1);   debugPrint("\t");
+  debugPrint(controls.btnValue2);   debugPrint("\t");
+  debugPrint(controls.btnValue3);   debugPrint("\t");
+  debugPrintln(controls.btnValue4);
+  
+  simpleMovements();
+}
 
 /**
  * Determines the direction of motor rotation based on control button states.
@@ -90,26 +165,37 @@ void loop() {}
  * If SERIAL_PORT is enabled, it prints the current direction to the Serial monitor.
  * since the buttons are set to INPUT_PULLUP, LOW is pressed and HIGH is released
  */
+
+// MARK: simpleMovements
 void simpleMovements() {
   // Check the state of the control buttons and set motor rotation accordingly
   if (!controls.btnValue1 && controls.btnValue2 && controls.btnValue3 && controls.btnValue4) {
-    rotateMotor(MAX_SPEED,MAX_SPEED);    // FORWARD
+    rotateMotor(MAX_SPEED,MAX_SPEED);     // FORWARD
+    debugPrintln("FORWARD");
   } else if (!controls.btnValue1 && !controls.btnValue3 && controls.btnValue2 && controls.btnValue4) {
     rotateMotor(HALF_SPEED,MAX_SPEED);    // FORWARD LEFT
+    debugPrintln("FORWARD LEFT");
   } else if (!controls.btnValue1 && !controls.btnValue4 && controls.btnValue2 && controls.btnValue3) {
     rotateMotor(MAX_SPEED,HALF_SPEED);    // FORWARD RIGHT
+    debugPrintln("FORWARD RIGHT");
   } else if (!controls.btnValue2 && controls.btnValue1 && controls.btnValue3 && controls.btnValue4) {
-    rotateMotor(-MAX_SPEED,-MAX_SPEED);  // BACKWARD
+    rotateMotor(-MAX_SPEED,-MAX_SPEED);   // BACKWARD
+    debugPrintln("BACKWARD");
   } else if (!controls.btnValue2 && !controls.btnValue3 && controls.btnValue1 && controls.btnValue4) {
     rotateMotor(-HALF_SPEED,-MAX_SPEED);  // BACKWARD LEFT
+    debugPrintln("BACKWARD LEFT");
   } else if (!controls.btnValue2 && !controls.btnValue4 && controls.btnValue1 && controls.btnValue3) {
     rotateMotor(-MAX_SPEED,-HALF_SPEED);  // BACKWARD RIGHT
+    debugPrintln("BACKWARD RIGHT");
   } else if (!controls.btnValue3 && controls.btnValue1 && controls.btnValue2 && controls.btnValue4) {
-    rotateMotor(MIN_SPEED,MAX_SPEED);      // LEFT
+    rotateMotor(MIN_SPEED,-MAX_SPEED);    // LEFT
+    debugPrintln("LEFT");
   } else if (!controls.btnValue4 && controls.btnValue1 && controls.btnValue2 && controls.btnValue3){
-    rotateMotor(MAX_SPEED,MIN_SPEED);      // RIGHT
+    rotateMotor(-MAX_SPEED,MIN_SPEED);    // RIGHT
+    debugPrintln("RIGHT");
   } else {
-    rotateMotor(MIN_SPEED,MIN_SPEED);        // STOP
+    rotateMotor(MIN_SPEED,MIN_SPEED);     // STOP
+    debugPrintln("STOP");
   }
 }
 
@@ -121,6 +207,7 @@ void simpleMovements() {
  * @param y The speed value for the right motor.
  */
 
+// MARK: rotateMotor
 void rotateMotor(int x, int y) {
   #if MOTOR_DRIVER == DRIVER_BTS
     BTS_movements(x, y);
@@ -128,10 +215,6 @@ void rotateMotor(int x, int y) {
     L298N_movements(x, y);
   #else
     #error "Unsupported MOTOR_DRIVER value."
-  #endif
-  
-  #if SERIAL_PORT
-    direction(x, y);
   #endif
 }
 
@@ -141,66 +224,34 @@ void rotateMotor(int x, int y) {
  * @param y speed for the right motor, positive for forward and negative for backward
  */
 
+// MARK: movements
 #if MOTOR_DRIVER == DRIVER_BTS
 void BTS_movements(int x, int y) {
-  int leftSpeed = (x > 0) ? x : -x;
-  int rightSpeed = (y > 0) ? y : -y;
+  #if BOARD == ESP8266
+    analogWrite(L1, max(0, x));
+    analogWrite(L2, max(0, -x));
+    analogWrite(R1, max(0, y));
+    analogWrite(R2, max(0, -y));
+  #elif BOARD == ESP32
+    ledcWrite(pwmChannelL1, max(0, x));
+    ledcWrite(pwmChannelL2, max(0, -x));
+    ledcWrite(pwmChannelR1, max(0, y));
+    ledcWrite(pwmChannelR2, max(0, -y));
+  #endif
+}
+#elif MOTOR_DRIVER == DRIVER_L298N
+void L298N_movements(int x, int y) {
   digitalWrite(L1, (x > 0) ? HIGH : LOW);
   digitalWrite(L2, (x < 0) ? HIGH : LOW);
-  analogWrite(ENL, leftSpeed);
   digitalWrite(R1, (y > 0) ? HIGH : LOW);
   digitalWrite(R2, (y < 0) ? HIGH : LOW);
-  analogWrite(ENR, rightSpeed);
-}
-#endif
-
-#if MOTOR_DRIVER == DRIVER_L298N
-void L298N_movements(int x, int y) {
-  analogWrite(L1, max(0, x));
-  analogWrite(L2, max(0, -x));
-  analogWrite(R1, max(0, y));
-  analogWrite(R2, max(0, -y));
-}
-#endif
-
-#if SERIAL_PORT
-void direction(int x, int y) {
-  if (x == MIN_SPEED && y == MIN_SPEED) {
-    Serial.println("STOP");
-    return;
-  }
   
-  if (x == MAX_SPEED) {
-    if (y == MAX_SPEED) {
-      Serial.println("FORWARD");
-    } else if (y == HALF_SPEED) {
-      Serial.println("FORWARD RIGHT");
-    } else if (y == MIN_SPEED) {
-      Serial.println("RIGHT");
-    }
-    return;
-  }
-  
-  if (y == MAX_SPEED) {
-    if (x == HALF_SPEED) {
-      Serial.println("FORWARD LEFT");
-    } else {
-      Serial.println("LEFT");
-    }
-    return;
-  }
-  
-  if (x == -MAX_SPEED) {
-    if (y == -MAX_SPEED) {
-      Serial.println("BACKWARD");
-    } else if (y == -HALF_SPEED) {
-      Serial.println("BACKWARD RIGHT");
-    }
-    return;
-  }
-  
-  if (x == -HALF_SPEED && y == -MAX_SPEED) {
-    Serial.println("BACKWARD LEFT");
-  }
+  #if BOARD == ESP8266
+    analogWrite(ENL, abs(x));
+    analogWrite(ENR, abs(y));
+  #elif BOARD == ESP32
+    ledcWrite(pwmChannelENL, abs(x));
+    ledcWrite(pwmChannelENR, abs(y));
+  #endif
 }
 #endif

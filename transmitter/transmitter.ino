@@ -4,20 +4,45 @@
   GitHub: nihaltp
 */
 
-#include <ESP8266WiFi.h>
-#include <espnow.h>
+// Define ESP Boards
+#define ESP8266 0
+#define ESP32 1
+
+#define BOARD ESP8266              // TODO: Change to: ESP32
+#define SERIAL_PORT true           // TODO: Change to false
+
+#if BOARD == ESP32
+  #include <WiFi.h> // ESP32 Library
+  #include <esp_now.h> // ESPNOW Library for ESP32
+#elif BOARD == ESP8266
+  #include <ESP8266WiFi.h> // ESP8266 Library
+  #include <espnow.h> // ESPNOW Library for ESP8266
+#else
+  #error "Unsupported BOARD value."
+#endif
 
 // Mac Address of the Receiver
 // Serial.println(WiFi.getMacAddress());
+#warning "Verify the MAC address in the code before running the code."
+
 uint8_t receiverMAC[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00}; // TODO: Replace Mac Address
 
 // Define Pins For Control Buttons
-const int BTN1 = D1; // Forward Button
-const int BTN2 = D2; // Backward Button
-const int BTN3 = D3; // Left Button
-const int BTN4 = D4; // Right Button
+#warning "Verify pin assignments for buttons before running the code."
+#if BOARD == ESP32
+  const int BTN1 = 12; // Forward Button   // TODO: Change
+  const int BTN2 = 13; // Backward Button  // TODO: Change
+  const int BTN3 = 14; // Left Button      // TODO: Change
+  const int BTN4 = 15; // Right Button     // TODO: Change
+#elif BOARD == ESP8266
+  const int BTN1 = D1; // Forward Button   // TODO: Change
+  const int BTN2 = D2; // Backward Button  // TODO: Change
+  const int BTN3 = D3; // Left Button      // TODO: Change
+  const int BTN4 = D4; // Right Button     // TODO: Change
+#endif
 
-#define SERIAL_PORT true  // TODO: Change
+#define debugPrint(x)  if (SERIAL_PORT) Serial.print(x)
+#define debugPrintln(x) if (SERIAL_PORT) Serial.println(x)
 
 typedef struct packetData {
   uint8_t btnValue1;
@@ -28,46 +53,53 @@ typedef struct packetData {
 
 packetData controls;
 
-void onDataSent(uint8_t *mac_addr, uint8_t sendStatus) {
-  #if SERIAL_PORT
-    Serial.print("Send Status:\t");
-    Serial.println(sendStatus == 0 ? "Success" : "Fail");
-  #endif
-}
-
+// MARK: setup
 void setup() {
   Serial.begin(115200);
   WiFi.mode(WIFI_STA);
-
+  
   while (esp_now_init() != 0) {
     Serial.println("Error initializing ESP-NOW");
   } Serial.println("ESP-NOW Initialized Successfully");
-
+  
   // Register the send callback
-  esp_now_set_self_role(ESP_NOW_ROLE_CONTROLLER);
+  #if BOARD == ESP8266
+    esp_now_set_self_role(ESP_NOW_ROLE_CONTROLLER); // Set as Controller for ESP8266
+  #endif
+  
   esp_now_register_send_cb(onDataSent);
   esp_now_add_peer(receiverMAC, ESP_NOW_ROLE_SLAVE, 1, NULL, 0);
-
+  
   pinMode(BTN1, INPUT_PULLUP);
   pinMode(BTN2, INPUT_PULLUP);
   pinMode(BTN3, INPUT_PULLUP);
   pinMode(BTN4, INPUT_PULLUP);
 }
 
+// MARK: loop
 void loop() {
   controls.btnValue1 = digitalRead(BTN1);
   controls.btnValue2 = digitalRead(BTN2);
   controls.btnValue3 = digitalRead(BTN3);
   controls.btnValue4 = digitalRead(BTN4);
-
-  #if SERIAL_PORT
-    Serial.print("Button Values:\t");
-    Serial.print(controls.btnValue1);   Serial.print("\t");
-    Serial.print(controls.btnValue2);   Serial.print("\t");
-    Serial.print(controls.btnValue3);   Serial.print("\t");
-    Serial.println(controls.btnValue4);
-  #endif
-
+  
+  debugPrint("Buttons Values:\t");
+  debugPrint(controls.btnValue1);   debugPrint("\t");
+  debugPrint(controls.btnValue2);   debugPrint("\t");
+  debugPrint(controls.btnValue3);   debugPrint("\t");
+  debugPrintln(controls.btnValue4);
+  
   // Send the control message
   esp_now_send(receiverMAC, (uint8_t *) &controls, sizeof(controls));
 }
+
+// Callback for data sent
+// MARK: callback
+#if BOARD == ESP32
+void onDataSent(const uint8_t *mac_addr, esp_now_send_status_t sendStatus) {
+#elif BOARD == ESP8266
+void onDataSent(uint8_t *mac_addr, uint8_t sendStatus) {
+  debugPrint("Send Status:\t");
+  debugPrintln(sendStatus == 0 ? "Success" : "Fail");
+}
+#endif
