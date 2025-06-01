@@ -1,7 +1,9 @@
 /*
   Code for transmitter using ESP-NOW
+  
   Made by: NIHAL T P
-  GitHub: nihaltp
+  GitHub: https://github.com/nihaltp
+  LinkedIn: https://www.linkedin.com/in/nihal-tp/
 */
 
 // Define ESP Boards
@@ -12,9 +14,11 @@
 #define SERIAL_PORT true           // TODO: Change to false
 
 #if BOARD == ESP32
+  // Board Manager URL: https://dl.espressif.com/dl/package_esp32_index.json
   #include <WiFi.h> // ESP32 Library
   #include <esp_now.h> // ESPNOW Library for ESP32
 #elif BOARD == ESP8266
+  // Board Manager URL: http://arduino.esp8266.com/stable/package_esp8266com_index.json
   #include <ESP8266WiFi.h> // ESP8266 Library
   #include <espnow.h> // ESPNOW Library for ESP8266
 #else
@@ -41,14 +45,12 @@ uint8_t receiverMAC[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00}; // TODO: Replace M
   const int BTN4 = D4; // Right Button     // TODO: Change
 #endif
 
-#define debugPrint(x)  if (SERIAL_PORT) Serial.print(x)
+// x is the content to be printed
+#define debugPrint(x)   if (SERIAL_PORT) Serial.print(x)
 #define debugPrintln(x) if (SERIAL_PORT) Serial.println(x)
 
 typedef struct packetData {
-  uint8_t btnValue1;
-  uint8_t btnValue2;
-  uint8_t btnValue3;
-  uint8_t btnValue4;
+  uint8_t btnValues;
 } packetData;
 
 packetData controls;
@@ -78,16 +80,16 @@ void setup() {
 
 // MARK: loop
 void loop() {
-  controls.btnValue1 = digitalRead(BTN1);
-  controls.btnValue2 = digitalRead(BTN2);
-  controls.btnValue3 = digitalRead(BTN3);
-  controls.btnValue4 = digitalRead(BTN4);
+  bitWrite(controls.btnValues, 0, digitalRead(BTN1));
+  bitWrite(controls.btnValues, 1, digitalRead(BTN2));
+  bitWrite(controls.btnValues, 2, digitalRead(BTN3));
+  bitWrite(controls.btnValues, 3, digitalRead(BTN4));
   
-  debugPrint("Buttons Values:\t");
-  debugPrint(controls.btnValue1);   debugPrint("\t");
-  debugPrint(controls.btnValue2);   debugPrint("\t");
-  debugPrint(controls.btnValue3);   debugPrint("\t");
-  debugPrintln(controls.btnValue4);
+  debugPrint  ("Buttons Values:\t");
+  debugPrint  (bitRead(controls.btnValues, 0)); debugPrint("\t");
+  debugPrint  (bitRead(controls.btnValues, 1)); debugPrint("\t");
+  debugPrint  (bitRead(controls.btnValues, 2)); debugPrint("\t");
+  debugPrintln(bitRead(controls.btnValues, 3));
   
   // Send the control message
   esp_now_send(receiverMAC, (uint8_t *) &controls, sizeof(controls));

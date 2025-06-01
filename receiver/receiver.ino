@@ -1,7 +1,9 @@
 /*
   Code for receiver using ESP-NOW
+  
   Made by: NIHAL T P
-  GitHub: nihaltp
+  GitHub: https://github.com/nihaltp
+  LinkedIn: https://www.linkedin.com/in/nihal-tp/
 */
 
 // Define ESP Boards
@@ -17,9 +19,11 @@
 #define SERIAL_PORT true           // TODO: Change to: false
 
 #if BOARD == ESP32
+  // Board Manager URL: https://dl.espressif.com/dl/package_esp32_index.json
   #include <WiFi.h>        // ESP32 Library
   #include <esp_now.h>     // ESPNOW Library for ESP32
 #elif BOARD == ESP8266
+  // Board Manager URL: http://arduino.esp8266.com/stable/package_esp8266com_index.json
   #include <ESP8266WiFi.h> // ESP8266 Library
   #include <espnow.h>      // ESPNOW Library for ESP8266
 #else
@@ -82,10 +86,7 @@ const int MIN_SPEED = 0;
 #define debugPrintln(x) if (SERIAL_PORT) Serial.println(x)
 
 typedef struct packetData {
-  uint8_t btnValue1;
-  uint8_t btnValue2;
-  uint8_t btnValue3;
-  uint8_t btnValue4;
+  uint8_t btnValues;
 } packetData;
 
 packetData controls;
@@ -148,11 +149,11 @@ void loop() {}
 void onReceive(uint8_t *mac_addr, uint8_t *incomingData, uint8_t len) {
   memcpy(&controls, incomingData, sizeof(controls));
   
-  debugPrint("Received commands:\t");
-  debugPrint(controls.btnValue1);   debugPrint("\t");
-  debugPrint(controls.btnValue2);   debugPrint("\t");
-  debugPrint(controls.btnValue3);   debugPrint("\t");
-  debugPrintln(controls.btnValue4);
+  debugPrint  ("Received commands:\t");
+  debugPrint  (bitRead(controls.btnValues, 0)); debugPrint("\t");
+  debugPrint  (bitRead(controls.btnValues, 1)); debugPrint("\t");
+  debugPrint  (bitRead(controls.btnValues, 2)); debugPrint("\t");
+  debugPrintln(bitRead(controls.btnValues, 3));
   
   simpleMovements();
 }
@@ -169,28 +170,28 @@ void onReceive(uint8_t *mac_addr, uint8_t *incomingData, uint8_t len) {
 // MARK: simpleMovements
 void simpleMovements() {
   // Check the state of the control buttons and set motor rotation accordingly
-  if (!controls.btnValue1 && controls.btnValue2 && controls.btnValue3 && controls.btnValue4) {
+  if (!bitRead(controls.btnValues, 0) && bitRead(controls.btnValues, 1) && bitRead(controls.btnValues, 2) && bitRead(controls.btnValues, 3)) {
     rotateMotor(MAX_SPEED,MAX_SPEED);     // FORWARD
     debugPrintln("FORWARD");
-  } else if (!controls.btnValue1 && !controls.btnValue3 && controls.btnValue2 && controls.btnValue4) {
+  } else if (!bitRead(controls.btnValues, 0) && !bitRead(controls.btnValues, 2) && bitRead(controls.btnValues, 1) && bitRead(controls.btnValues, 3)) {
     rotateMotor(HALF_SPEED,MAX_SPEED);    // FORWARD LEFT
     debugPrintln("FORWARD LEFT");
-  } else if (!controls.btnValue1 && !controls.btnValue4 && controls.btnValue2 && controls.btnValue3) {
+  } else if (!bitRead(controls.btnValues, 0) && !bitRead(controls.btnValues, 3) && bitRead(controls.btnValues, 1) && bitRead(controls.btnValues, 2)) {
     rotateMotor(MAX_SPEED,HALF_SPEED);    // FORWARD RIGHT
     debugPrintln("FORWARD RIGHT");
-  } else if (!controls.btnValue2 && controls.btnValue1 && controls.btnValue3 && controls.btnValue4) {
+  } else if (!bitRead(controls.btnValues, 1) && bitRead(controls.btnValues, 0) && bitRead(controls.btnValues, 2) && bitRead(controls.btnValues, 3)) {
     rotateMotor(-MAX_SPEED,-MAX_SPEED);   // BACKWARD
     debugPrintln("BACKWARD");
-  } else if (!controls.btnValue2 && !controls.btnValue3 && controls.btnValue1 && controls.btnValue4) {
+  } else if (!bitRead(controls.btnValues, 1) && !bitRead(controls.btnValues, 2) && bitRead(controls.btnValues, 0) && bitRead(controls.btnValues, 3)) {
     rotateMotor(-HALF_SPEED,-MAX_SPEED);  // BACKWARD LEFT
     debugPrintln("BACKWARD LEFT");
-  } else if (!controls.btnValue2 && !controls.btnValue4 && controls.btnValue1 && controls.btnValue3) {
+  } else if (!bitRead(controls.btnValues, 1) && !bitRead(controls.btnValues, 3) && bitRead(controls.btnValues, 0) && bitRead(controls.btnValues, 2)) {
     rotateMotor(-MAX_SPEED,-HALF_SPEED);  // BACKWARD RIGHT
     debugPrintln("BACKWARD RIGHT");
-  } else if (!controls.btnValue3 && controls.btnValue1 && controls.btnValue2 && controls.btnValue4) {
+  } else if (!bitRead(controls.btnValues, 2) && bitRead(controls.btnValues, 0) && bitRead(controls.btnValues, 1) && bitRead(controls.btnValues, 3)) {
     rotateMotor(MIN_SPEED,-MAX_SPEED);    // LEFT
     debugPrintln("LEFT");
-  } else if (!controls.btnValue4 && controls.btnValue1 && controls.btnValue2 && controls.btnValue3){
+  } else if (!bitRead(controls.btnValues, 3) && bitRead(controls.btnValues, 0) && bitRead(controls.btnValues, 1) && bitRead(controls.btnValues, 2)){
     rotateMotor(-MAX_SPEED,MIN_SPEED);    // RIGHT
     debugPrintln("RIGHT");
   } else {
