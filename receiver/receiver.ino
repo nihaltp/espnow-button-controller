@@ -169,29 +169,35 @@ void onReceive(uint8_t *mac_addr, uint8_t *incomingData, uint8_t len) {
 
 // MARK: simpleMovements
 void simpleMovements() {
-  // Check the state of the control buttons and set motor rotation accordingly
-  if (!bitRead(controls.btnValues, 0) && bitRead(controls.btnValues, 1) && bitRead(controls.btnValues, 2) && bitRead(controls.btnValues, 3)) {
+  // Extract the button states from the controls structure
+  bool forward  = bitRead(controls.btnValues, 0);
+  bool backward = bitRead(controls.btnValues, 1);
+  bool left     = bitRead(controls.btnValues, 2);
+  bool right    = bitRead(controls.btnValues, 3);
+  
+  // Determine the motor rotation based on button states
+  if (!forward && backward && left && right) {
     rotateMotor(MAX_SPEED,MAX_SPEED);     // FORWARD
     debugPrintln("FORWARD");
-  } else if (!bitRead(controls.btnValues, 0) && !bitRead(controls.btnValues, 2) && bitRead(controls.btnValues, 1) && bitRead(controls.btnValues, 3)) {
+  } else if (!forward && !left && backward && right) {
     rotateMotor(HALF_SPEED,MAX_SPEED);    // FORWARD LEFT
     debugPrintln("FORWARD LEFT");
-  } else if (!bitRead(controls.btnValues, 0) && !bitRead(controls.btnValues, 3) && bitRead(controls.btnValues, 1) && bitRead(controls.btnValues, 2)) {
+  } else if (!forward && !right && backward && left) {
     rotateMotor(MAX_SPEED,HALF_SPEED);    // FORWARD RIGHT
     debugPrintln("FORWARD RIGHT");
-  } else if (!bitRead(controls.btnValues, 1) && bitRead(controls.btnValues, 0) && bitRead(controls.btnValues, 2) && bitRead(controls.btnValues, 3)) {
+  } else if (!backward && forward && left && right) {
     rotateMotor(-MAX_SPEED,-MAX_SPEED);   // BACKWARD
     debugPrintln("BACKWARD");
-  } else if (!bitRead(controls.btnValues, 1) && !bitRead(controls.btnValues, 2) && bitRead(controls.btnValues, 0) && bitRead(controls.btnValues, 3)) {
+  } else if (!backward && !left && forward && right) {
     rotateMotor(-HALF_SPEED,-MAX_SPEED);  // BACKWARD LEFT
     debugPrintln("BACKWARD LEFT");
-  } else if (!bitRead(controls.btnValues, 1) && !bitRead(controls.btnValues, 3) && bitRead(controls.btnValues, 0) && bitRead(controls.btnValues, 2)) {
+  } else if (!backward && !right && forward && left) {
     rotateMotor(-MAX_SPEED,-HALF_SPEED);  // BACKWARD RIGHT
     debugPrintln("BACKWARD RIGHT");
-  } else if (!bitRead(controls.btnValues, 2) && bitRead(controls.btnValues, 0) && bitRead(controls.btnValues, 1) && bitRead(controls.btnValues, 3)) {
+  } else if (!left && forward && backward && right) {
     rotateMotor(MIN_SPEED,-MAX_SPEED);    // LEFT
     debugPrintln("LEFT");
-  } else if (!bitRead(controls.btnValues, 3) && bitRead(controls.btnValues, 0) && bitRead(controls.btnValues, 1) && bitRead(controls.btnValues, 2)){
+  } else if (!right && forward && backward && left){
     rotateMotor(-MAX_SPEED,MIN_SPEED);    // RIGHT
     debugPrintln("RIGHT");
   } else {
