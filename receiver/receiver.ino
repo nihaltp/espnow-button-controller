@@ -176,32 +176,36 @@ void simpleMovements() {
   bool right    = bitRead(controls.btnValues, 3);
   
   // Determine the motor rotation based on button states
-  if (!forward && backward && left && right) {
-    rotateMotor(MAX_SPEED,MAX_SPEED);     // FORWARD
-    debugPrintln("FORWARD");
-  } else if (!forward && !left && backward && right) {
-    rotateMotor(HALF_SPEED,MAX_SPEED);    // FORWARD LEFT
-    debugPrintln("FORWARD LEFT");
-  } else if (!forward && !right && backward && left) {
-    rotateMotor(MAX_SPEED,HALF_SPEED);    // FORWARD RIGHT
-    debugPrintln("FORWARD RIGHT");
-  } else if (!backward && forward && left && right) {
-    rotateMotor(-MAX_SPEED,-MAX_SPEED);   // BACKWARD
-    debugPrintln("BACKWARD");
-  } else if (!backward && !left && forward && right) {
-    rotateMotor(-HALF_SPEED,-MAX_SPEED);  // BACKWARD LEFT
-    debugPrintln("BACKWARD LEFT");
-  } else if (!backward && !right && forward && left) {
-    rotateMotor(-MAX_SPEED,-HALF_SPEED);  // BACKWARD RIGHT
-    debugPrintln("BACKWARD RIGHT");
-  } else if (!left && forward && backward && right) {
-    rotateMotor(MIN_SPEED,-MAX_SPEED);    // LEFT
+  if (!forward && backward) {
+    if (!left && right) {
+      rotateMotor(HALF_SPEED,MAX_SPEED);    // FORWARD LEFT
+      debugPrintln("FORWARD LEFT");
+    } else if (!right && left) {
+      rotateMotor(MAX_SPEED,HALF_SPEED);    // FORWARD RIGHT
+      debugPrintln("FORWARD RIGHT");
+    } else {
+      rotateMotor(MAX_SPEED,MAX_SPEED);     // FORWARD
+      debugPrintln("FORWARD");
+    }
+  } else if (!backward && forward) {
+    if (!left && right) {
+      rotateMotor(-HALF_SPEED,-MAX_SPEED);  // BACKWARD LEFT
+      debugPrintln("BACKWARD LEFT");
+    } else if (!right && left) {
+      rotateMotor(-MAX_SPEED,-HALF_SPEED);  // BACKWARD RIGHT
+      debugPrintln("BACKWARD RIGHT");
+    } else {
+      rotateMotor(-MAX_SPEED,-MAX_SPEED);   // BACKWARD
+      debugPrintln("BACKWARD");
+    }
+  } else if (!left && right) {
+    rotateMotor(MIN_SPEED,-MAX_SPEED);      // LEFT
     debugPrintln("LEFT");
-  } else if (!right && forward && backward && left){
-    rotateMotor(-MAX_SPEED,MIN_SPEED);    // RIGHT
+  } else if (!right && left) {
+    rotateMotor(-MAX_SPEED,MIN_SPEED);      // RIGHT
     debugPrintln("RIGHT");
   } else {
-    rotateMotor(MIN_SPEED,MIN_SPEED);     // STOP
+    rotateMotor(MIN_SPEED,MIN_SPEED);       // STOP
     debugPrintln("STOP");
   }
 }
