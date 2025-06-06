@@ -63,21 +63,6 @@
   #endif
 #endif
 
-#if BOARD == ESP32
-  const int pwmFrequency = 5000;
-  const int pwmResolution = 8;
-  
-  const int pwmChannelL1 = 0;
-  const int pwmChannelL2 = 1;
-  const int pwmChannelR1 = 2;
-  const int pwmChannelR2 = 3;
-  
-  #if MOTOR_DRIVER == DRIVER_L298N
-    const int pwmChannelENL = 4;
-    const int pwmChannelENR = 5;
-  #endif
-#endif
-
 const int MAX_SPEED = 255;
 const int HALF_SPEED = 127;
 const int MIN_SPEED = 0;
@@ -123,22 +108,25 @@ void setup() {
   #endif
   
   #if BOARD == ESP32
-    ledcSetup(pwmChannelL1, pwmFrequency, pwmResolution);
-    ledcSetup(pwmChannelL2, pwmFrequency, pwmResolution);
-    ledcSetup(pwmChannelR1, pwmFrequency, pwmResolution);
-    ledcSetup(pwmChannelR2, pwmFrequency, pwmResolution);
+    const int pwmFrequency = 5000;
+    const int pwmResolution = 8;
     
-    ledcAttachPin(L1, pwmChannelL1);
-    ledcAttachPin(L2, pwmChannelL2);
-    ledcAttachPin(R1, pwmChannelR1);
-    ledcAttachPin(R2, pwmChannelR2);
+    const int pwmChannels[] = {pwmChannelL1, pwmChannelL2, pwmChannelR1, pwmChannelR2};
+    const int pwmPins[] = {0, 1, 2, 3};
+    
+    for (int i = 0; i < 4; i++) {
+      ledcSetup(pwmChannels[i], pwmFrequency, pwmResolution);
+      ledcAttachPin(pwmPins[i], pwmChannels[i]);
+    }
     
     #if MOTOR_DRIVER == DRIVER_L298N
-      ledcSetup(pwmChannelENL, pwmFrequency, pwmResolution);
-      ledcSetup(pwmChannelENR, pwmFrequency, pwmResolution);
+      const int pwmENChannels[] = {pwmChannelENL, pwmChannelENR};
+      const int pwmENPins[] = {4, 5};
       
-      ledcAttachPin(ENL, pwmChannelENL);
-      ledcAttachPin(ENR, pwmChannelENR);
+      for (int i = 0; i < 2; i++) {
+        ledcSetup(pwmENChannels[i], pwmFrequency, pwmResolution);
+        ledcAttachPin(pwmENPins[i], pwmENChannels[i]);
+      }
     #endif
   #endif
 }
