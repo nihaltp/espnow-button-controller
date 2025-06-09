@@ -55,6 +55,12 @@ typedef struct packetData {
 
 packetData controls;
 
+#if BOARD == ESP32
+void onDataSent(const uint8_t *mac_addr, esp_now_send_status_t sendStatus);
+#elif BOARD == ESP8266
+void onDataSent(uint8_t *mac_addr, uint8_t sendStatus);
+#endif
+
 // MARK: setup
 void setup() {
   Serial.begin(115200);
