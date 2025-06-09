@@ -121,6 +121,8 @@ void loop() {
 // MARK: callback
 #if BOARD == ESP32
 void onDataSent(const uint8_t *mac_addr, esp_now_send_status_t sendStatus) {
+  debugPrint("Send Status:\t");
+  debugPrintln(sendStatus == ESP_NOW_SEND_SUCCESS ? "Success" : "Fail");
 #elif BOARD == ESP8266
 void onDataSent(uint8_t *mac_addr, uint8_t sendStatus) {
   debugPrint("Send Status:\t");
