@@ -7,22 +7,17 @@
 */
 
 // Define ESP Boards
-#ifndef ESP8266
-  #define ESP8266 0
-#endif
+#define ESP8266_BOARD 0
+#define ESP32_BOARD 1
 
-#ifndef ESP32
-  #define ESP32 1
-#endif
-
-#define BOARD ESP8266              // TODO: Change to: ESP32
+#define BOARD ESP8266_BOARD        // TODO: Change to: ESP32_BOARD
 #define SERIAL_PORT true           // TODO: Change to false
 
-#if BOARD == ESP32
+#if BOARD == ESP32_BOARD
   // Board Manager URL: https://dl.espressif.com/dl/package_esp32_index.json
   #include <WiFi.h> // ESP32 Library
   #include <esp_now.h> // ESPNOW Library for ESP32
-#elif BOARD == ESP8266
+#elif BOARD == ESP8266_BOARD
   // Board Manager URL: http://arduino.esp8266.com/stable/package_esp8266com_index.json
   #include <ESP8266WiFi.h> // ESP8266 Library
   #include <espnow.h> // ESPNOW Library for ESP8266
@@ -41,12 +36,12 @@ uint8_t receiverMACs[][6] = {
 
 // Define Pins For Control Buttons
 #warning "Verify pin assignments for buttons before running the code."
-#if BOARD == ESP32
+#if BOARD == ESP32_BOARD
   const int BTN1 = 12; // Forward Button   // TODO: Change
   const int BTN2 = 13; // Backward Button  // TODO: Change
   const int BTN3 = 14; // Left Button      // TODO: Change
   const int BTN4 = 15; // Right Button     // TODO: Change
-#elif BOARD == ESP8266
+#elif BOARD == ESP8266_BOARD
   const int BTN1 = D1; // Forward Button   // TODO: Change
   const int BTN2 = D2; // Backward Button  // TODO: Change
   const int BTN3 = D3; // Left Button      // TODO: Change
@@ -63,9 +58,9 @@ typedef struct packetData {
 
 packetData controls;
 
-#if BOARD == ESP32
+#if BOARD == ESP32_BOARD
 void onDataSent(const uint8_t *mac_addr, esp_now_send_status_t sendStatus);
-#elif BOARD == ESP8266
+#elif BOARD == ESP8266_BOARD
 void onDataSent(uint8_t *mac_addr, uint8_t sendStatus);
 #endif
 
@@ -79,19 +74,19 @@ void setup() {
   } Serial.println("ESP-NOW Initialized Successfully");
   
   // Register the send callback
-  #if BOARD == ESP8266
+  #if BOARD == ESP8266_BOARD
     esp_now_set_self_role(ESP_NOW_ROLE_CONTROLLER); // Set as Controller for ESP8266
   #endif
   
   esp_now_register_send_cb(onDataSent);
   for (auto &mac : receiverMACs) {
-  #if BOARD == ESP32
+  #if BOARD == ESP32_BOARD
     if (!esp_now_is_peer_exist(mac)) {
       if (esp_now_add_peer(mac, ESP_NOW_ROLE_SLAVE, 1, NULL, 0) != ESP_OK) {
         Serial.println("Failed to add peer!");
       }
     }
-  #elif BOARD == ESP8266
+  #elif BOARD == ESP8266_BOARD
     esp_now_add_peer(mac, ESP_NOW_ROLE_SLAVE, 0, NULL, 0);
   #endif
   }
@@ -124,11 +119,11 @@ void loop() {
 
 // Callback for data sent
 // MARK: callback
-#if BOARD == ESP32
+#if BOARD == ESP32_BOARD
 void onDataSent(const uint8_t *mac_addr, esp_now_send_status_t sendStatus) {
   debugPrint("Send Status:\t");
   debugPrintln(sendStatus == ESP_NOW_SEND_SUCCESS ? "Success" : "Fail");
-#elif BOARD == ESP8266
+#elif BOARD == ESP8266_BOARD
 void onDataSent(uint8_t *mac_addr, uint8_t sendStatus) {
   debugPrint("Send Status:\t");
   debugPrintln(sendStatus == 0 ? "Success" : "Fail");
