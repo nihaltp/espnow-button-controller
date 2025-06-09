@@ -7,8 +7,13 @@
 */
 
 // Define ESP Boards
-#define ESP8266 0
-#define ESP32 1
+#ifndef ESP8266
+  #define ESP8266 0
+#endif
+
+#ifndef ESP32
+  #define ESP32 1
+#endif
 
 #define BOARD ESP8266              // TODO: Change to: ESP32
 #define SERIAL_PORT true           // TODO: Change to false
