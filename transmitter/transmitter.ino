@@ -29,7 +29,10 @@
 // Serial.println(WiFi.getMacAddress());
 #warning "Verify the MAC address in the code before running the code."
 
-uint8_t receiverMAC[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00}; // TODO: Replace Mac Address
+uint8_t receiverMACs[][6] = {
+  {0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+  {0x11, 0x11, 0x11, 0x11, 0x11, 0x11}
+}; // TODO: Replace Mac Addresses
 
 // Define Pins For Control Buttons
 #warning "Verify pin assignments for buttons before running the code."
@@ -76,7 +79,17 @@ void setup() {
   #endif
   
   esp_now_register_send_cb(onDataSent);
-  esp_now_add_peer(receiverMAC, ESP_NOW_ROLE_SLAVE, 1, NULL, 0);
+  for (auto &mac : receiverMACs) {
+  #if BOARD == ESP32
+    if (!esp_now_is_peer_exist(mac)) {
+      if (esp_now_add_peer(mac, ESP_NOW_ROLE_SLAVE, 1, NULL, 0) != ESP_OK) {
+        Serial.println("Failed to add peer!");
+      }
+    }
+  #elif BOARD == ESP8266
+    esp_now_add_peer(mac, ESP_NOW_ROLE_SLAVE, 0, NULL, 0);
+  #endif
+  }
   
   pinMode(BTN1, INPUT_PULLUP);
   pinMode(BTN2, INPUT_PULLUP);
@@ -98,7 +111,10 @@ void loop() {
   debugPrintln(bitRead(controls.btnValues, 3));
   
   // Send the control message
-  esp_now_send(receiverMAC, (uint8_t *) &controls, sizeof(controls));
+  for (auto &mac : receiverMACs) {
+    esp_now_send(mac, (uint8_t *) &controls, sizeof(controls));
+    delay(10); // Small delay to avoid flooding the network
+  }
 }
 
 // Callback for data sent
